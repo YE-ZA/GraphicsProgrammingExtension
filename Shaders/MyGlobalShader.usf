@@ -1,0 +1,16 @@
+#include "/Engine/Public/Platform.ush"
+
+void MainVS(
+    in float4 InPosition : ATTRIBUTE0,
+    out float4 Output : SV_POSITION
+)
+{
+    Output = InPosition;
+}
+
+float3 MyColor;
+float MyAlpha;
+float4 MainPS() : SV_Target0
+{
+    return float4(MyColor.r, MyColor.g, MyColor.b, MyAlpha);
+}
