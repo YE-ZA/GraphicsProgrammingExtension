@@ -29,6 +29,9 @@ namespace
 {
 	FDelegateHandle GOverlayDelegateHandle;
 
+	// FPostOpaqueRenderParameters is defined in RendererInterface.h.
+	// It will be temporarily constructed every frame if the delegate is bound, check SceneRendering.cpp.
+	// Both PostOpaqueRenderDelegate and OverlayRenderDelegate use this class to pass parameters to the callback function.
 	void OnOverlayRender(FPostOpaqueRenderParameters& Parameters)
 	{
 		const int32 TestValue = CVarMyGlobalShaderTest.GetValueOnRenderThread();
@@ -45,6 +48,9 @@ namespace
 		FRDGBuilder& GraphBuilder = *Parameters.GraphBuilder;
 
 		FRenderTargetParameters* PassParameters = GraphBuilder.AllocParameters<FRenderTargetParameters>();
+		// Bind the Parameters.ColorTexture(Scene Color) to RenderTargets[0] that Unreal will draw to viewport by default.
+		// ELoad means load the content of the ColorTexture, EClear means clear the ColorTexture to black.
+		// Funny enough changing to RenderTargets[1] or Parameters.DepthTexture/NormalTexture will crash the engine.
 		PassParameters->RenderTargets[0] = FRenderTargetBinding(Parameters.ColorTexture, ERenderTargetLoadAction::ELoad);
 
 		const FIntRect ViewRect = Parameters.ViewportRect;
