@@ -5,11 +5,6 @@
 #include "RenderUtils.h"
 #include "RHIStaticStates.h"
 
-// OUTDATED
-// The first parameter is for shaders that using a shader templete, if not use then leave it empty.
-// IMPLEMENT_SHADER_TYPE(, FMyGlobalVS, TEXT("/Plugin/GraphicsProgrammingExtension/MyGlobalShader.usf"), TEXT("MainVS"), SF_Vertex)
-// IMPLEMENT_SHADER_TYPE(, FMyGlobalPS, TEXT("/Plugin/GraphicsProgrammingExtension/MyGlobalShader.usf"), TEXT("MainPS"), SF_Pixel)
-// CURRENTLY USED
 IMPLEMENT_GLOBAL_SHADER(FMyGlobalVS, "/Plugin/GraphicsProgrammingExtension/MyGlobalShader.usf", "MainVS", SF_Vertex);
 IMPLEMENT_GLOBAL_SHADER(FMyGlobalPS, "/Plugin/GraphicsProgrammingExtension/MyGlobalShader.usf", "MainPS", SF_Pixel);
 
@@ -18,11 +13,6 @@ void RenderMyGlobalShader(FRHICommandList& RHICmdList, ERHIFeatureLevel::Type Fe
 	FGraphicsPipelineStateInitializer GraphicsPSOInit;
 	RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 
-	// OUTDATED
-    // RHICmdList.SetRasterizerState(TStaticRasterizerState<>::GetRHI());
-    // RHICmdList.SetBlendState(TStaticBlendState<>::GetRHI());
-    // RHICmdList.SetDepthStencilState(TStaticDepthStencilState::GetRHI(), 0);
-    // CURRENTLY USED
     // FM_Solid means fill the polygon, CM_None means no culling.
     GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None>::GetRHI();
     // CW_RGBA means Color Write Mask = RGBA, write it for 8 times because Unreal supports maximum 8 multiple render targets(MRT).
@@ -36,11 +26,6 @@ void RenderMyGlobalShader(FRHICommandList& RHICmdList, ERHIFeatureLevel::Type Fe
 	TShaderMapRef<FMyGlobalVS> VertexShader(ShaderMap);
 	TShaderMapRef<FMyGlobalPS> PixelShader(ShaderMap);
 
-    // OUTDATED
-	// Declare a bound shader state using those shaders and apply it to the command list.
-    // static FGlobalBoundShaderState MyBoundShaderState;
-    // SetGlobalBoundShaderState(RHICmdList, FeatureLevel, MyBoundShaderState, GetVertexDeclarationFVector4(), *MyVS, *MyPS);
-    // CURRENTLY USED
     GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GetVertexDeclarationFVector4();
 	GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
 	GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
@@ -49,7 +34,10 @@ void RenderMyGlobalShader(FRHICommandList& RHICmdList, ERHIFeatureLevel::Type Fe
 	// Above this line are all about setting up the graphics pipeline state(PSO), now we finally apply it.
     SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit, 0);
 
-	SetShaderParametersLegacyPS(RHICmdList, PixelShader, Color, Alpha);
+	FMyGlobalPS::FParameters Parameters;
+	Parameters.MyColor = Color;
+	Parameters.MyAlpha = Alpha;
+	SetShaderParameters(RHICmdList, PixelShader, PixelShader.GetPixelShader(), Parameters);
 
 	// GClearVertexBuffer is a global vertex buffer that is used to draw a full screen quad to clear the screen or do some post processing.
     RHICmdList.SetStreamSource(0, GClearVertexBuffer.VertexBufferRHI, 0);

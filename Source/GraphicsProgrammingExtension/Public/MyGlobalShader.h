@@ -1,17 +1,13 @@
-// Followed this tutorial to create global shaders:
-// https://dev.epicgames.com/documentation/en-us/unreal-engine/adding-global-shaders-to-unreal-engine
-// Notice: many macros are outdated from the tutorial, but I will keep them for reference.
+// Used the most updated way to create global shaders.
 
 #pragma once
 
 #include "GlobalShader.h"
 #include "ShaderParameters.h"
+#include "ShaderParameterStruct.h"
 
 class FMyGlobalVS : public FGlobalShader
 {
-	// OUTDATED
-    // DECLARE_EXPORT_SHADER_TYPE(FMyGlobalVS, Global);
-    // CURRENTLY USED
     DECLARE_GLOBAL_SHADER(FMyGlobalVS);
 
 public:
@@ -19,35 +15,24 @@ public:
 	FMyGlobalVS(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
 		: FGlobalShader(Initializer) {}
 
-	// OUTDATED
-    // static bool ShouldCache(EShaderPlatform Platform)
-    // CURRENTLY USED - more flexible considering different platforms, feature levels, shader permutations, etc.
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
 	{
-		return true;
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
 	}
 };
 
 class FMyGlobalPS : public FGlobalShader
 {
-	// OUTDATED
-    // DECLARE_EXPORT_SHADER_TYPE(FMyGlobalPS, Global);
-    // CURRENTLY USED
     DECLARE_GLOBAL_SHADER(FMyGlobalPS);
+	SHADER_USE_PARAMETER_STRUCT(FMyGlobalPS, FGlobalShader);
 
 public:
-	FMyGlobalPS() = default;
-	FMyGlobalPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
-		: FGlobalShader(Initializer)
-	{
-		// SPF_Mandatory means the parameter is mandatory, if not set, the shader will not compile.
-		MyColorParameter.Bind(Initializer.ParameterMap, TEXT("MyColor"), SPF_Mandatory);
-		MyAlphaParameter.Bind(Initializer.ParameterMap, TEXT("MyAlpha"), SPF_Mandatory);
-	}
+    // SHADER_USE_PARAMETER_STRUCT will automatically declare the constructors.
+	// Repeating the declaration will cause errors.
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
 	{
-		return true;
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
 	}
 
 	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
@@ -62,16 +47,11 @@ public:
 		OutEnvironment.SetDefine(TEXT("MY_DEFINE"), 1);
 	}
 
-	// Has to named as SetParameters with the first parameter is FRHIBatchedShaderParameters&, to be able to bind with SetShaderParametersLegacyPS.
-	void SetParameters(FRHIBatchedShaderParameters& BatchedParameters, const FVector3f& Color, float Alpha)
-	{
-		SetShaderValue(BatchedParameters, MyColorParameter, Color);
-		SetShaderValue(BatchedParameters, MyAlphaParameter, Alpha);
-	}
-
-protected:
-	LAYOUT_FIELD(FShaderParameter, MyColorParameter);
-	LAYOUT_FIELD(FShaderParameter, MyAlphaParameter);
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		// The second parameter must match the name defined in HLSL.
+	    SHADER_PARAMETER(FVector3f, MyColor)
+		SHADER_PARAMETER(float, MyAlpha)
+	END_SHADER_PARAMETER_STRUCT()
 };
 
 void RenderMyGlobalShader(FRHICommandList& RHICmdList, ERHIFeatureLevel::Type FeatureLevel, const FVector3f& Color, float Alpha);
