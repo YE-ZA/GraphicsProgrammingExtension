@@ -1,0 +1,53 @@
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Public/Platform.ush"
+
+float3 MyColor;
+
+float GetCustomDepth(float2 UV)
+{
+    // Unreal uses reversed-Z by default
+    // 0.0 means far and 1.0 means close
+    // Convert a linear depth (cm) to deviceZ (0-1) properly.
+    const float FarDeviceZ = ConvertToDeviceZ(100000000.0);
+    float2 Center = UV - 0.5;
+    return dot(Center, Center) > 0.25 ? FarDeviceZ : 1.0;
+}
+
+struct FVertex
+{
+    float4 Pos : SV_POSITION;
+    float2 UV  : TEXCOORD0;
+};
+
+// Standard fullscreen triangle generated from SV_VertexID (draw 3 vertices, PT_TriangleList).
+void MainVS(
+    in uint VertexID : SV_VertexID,
+    out FVertex Out)
+{
+    Out.UV  = float2((VertexID << 1) & 2, VertexID & 2);
+    Out.Pos = float4(Out.UV * 2.0 - 1.0, 0.0, 1.0);
+}
+
+// SV_Target0 is Emissive (SceneColor in base pass MRT layout)
+// SV_Target1 is WorldNormal
+// SV_Target2 is MetallicSpecularRoughness
+// SV_Target3 is BaseColor
+// SV_Target4 is SceneVelocity
+// SV_Target5 is CustomData
+// See GBufferInfo.h/.cpp for more details.
+void MainPS(
+    in FVertex In,
+    out float4 OutMSR   : SV_Target2,
+    out float4 OutColor : SV_Target3,
+    out float  OutDepth : SV_Depth)
+{
+    float4 MSR = float4(1, 1, 0, 0.00392); // 0.00392 = 1/255, default shading model id.
+    float4 BaseColor = float4(MyColor, 1.0); // Alpha value got masked and won't be written into the RT.
+
+    OutMSR = MSR;
+    OutColor = BaseColor;
+    // ViewRect is just a subarea of the RT in most cases.
+    // So we need to use the viewport's UV instead of RT's UV to avoid undesired clipping.
+    float2 ViewportUV = (In.Pos.xy - View.ViewRectMin.xy) * View.ViewSizeAndInvSize.zw;
+    OutDepth = GetCustomDepth(ViewportUV);
+}

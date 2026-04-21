@@ -18,10 +18,17 @@
 // Console Variables for testing the graphics programming extension
 //----------------------------------------------------------------------
 
-static TAutoConsoleVariable<int32> CVarMyGlobalShaderTest(
+TAutoConsoleVariable<int32> CVarMyGlobalShaderTest(
 	TEXT("r.MyGlobalShaderTest"),
 	0,
 	TEXT("0: off. 1/2/3: draw overlay with R/G/B channel enabled (alpha=1)."),
+	ECVF_RenderThreadSafe
+);
+
+TAutoConsoleVariable<int32> CVarMySceneViewExtensionTest(
+	TEXT("r.MySceneViewExtensionTest"),
+	0,
+	TEXT("0: off. 1: draw scene view extension."),
 	ECVF_RenderThreadSafe
 );
 
